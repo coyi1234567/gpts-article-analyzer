@@ -61,14 +61,14 @@ def extract_article():
             
             if filter_type == 'content_only':
                 # 只保留内容图片，过滤装饰图片
-                should_include = self._is_content_image(img, i)
+                should_include = _is_content_image(img, i)
             elif filter_type == 'cover_only':
                 # 只保留封面图片
                 should_include = 'cover' in img['alt'].lower() or 'cover' in img.get('title', '').lower()
             elif filter_type == 'custom':
                 # 自定义过滤，基于用户提示词
                 custom_filter = data.get('custom_filter', '')
-                should_include = self._matches_custom_filter(img, custom_filter)
+                should_include = _matches_custom_filter(img, custom_filter)
             
             if should_include:
                 processed_images.append({
@@ -77,7 +77,7 @@ def extract_article():
                     'alt': img['alt'],
                     'title': img['title'],
                     'index': len(processed_images) + 1,
-                    'filter_reason': self._get_filter_reason(img, filter_type)
+                    'filter_reason': _get_filter_reason(img, filter_type)
                 })
         
         result = {
@@ -139,67 +139,67 @@ def proxy_image(encoded_url):
         logger.error(f"图片代理失败: {str(e)}")
         return jsonify({'error': f'图片代理失败: {str(e)}'}), 500
 
-    def _is_content_image(self, img: dict, index: int) -> bool:
-        """判断是否为内容图片"""
-        # 封面图片总是保留
-        if 'cover' in img['alt'].lower() or 'cover' in img.get('title', '').lower():
-            return True
-        
-        # 过滤掉太小的图片
-        try:
-            width = int(img.get('width', 0)) if img.get('width') else 0
-            height = int(img.get('height', 0)) if img.get('height') else 0
-            if width > 0 and height > 0 and (width < 150 or height < 150):
-                return False
-        except:
-            pass
-        
-        # 过滤掉正方形小图（可能是头像）
-        try:
-            width = int(img.get('width', 0)) if img.get('width') else 0
-            height = int(img.get('height', 0)) if img.get('height') else 0
-            if width > 0 and height > 0:
-                if abs(width - height) < 20 and width < 200:
-                    return False
-        except:
-            pass
-        
-        # 对于微信文章，前几张图片通常是内容图片
-        if index < 5:  # 前5张图片通常是内容图片
-            return True
-        
+def _is_content_image(img: dict, index: int) -> bool:
+    """判断是否为内容图片"""
+    # 封面图片总是保留
+    if 'cover' in img['alt'].lower() or 'cover' in img.get('title', '').lower():
         return True
     
-    def _matches_custom_filter(self, img: dict, custom_filter: str) -> bool:
-        """基于自定义提示词过滤图片"""
-        if not custom_filter:
-            return True
-        
-        # 将提示词转换为关键词列表
-        keywords = [kw.strip().lower() for kw in custom_filter.split(',')]
-        
-        # 检查图片属性是否匹配关键词
-        img_text = f"{img['alt']} {img.get('title', '')} {img['src']}".lower()
-        
-        for keyword in keywords:
-            if keyword in img_text:
-                return True
-        
-        return False
+    # 过滤掉太小的图片
+    try:
+        width = int(img.get('width', 0)) if img.get('width') else 0
+        height = int(img.get('height', 0)) if img.get('height') else 0
+        if width > 0 and height > 0 and (width < 150 or height < 150):
+            return False
+    except:
+        pass
     
-    def _get_filter_reason(self, img: dict, filter_type: str) -> str:
-        """获取过滤原因说明"""
-        if filter_type == 'content_only':
-            if 'cover' in img['alt'].lower():
-                return "封面图片"
-            else:
-                return "内容配图"
-        elif filter_type == 'cover_only':
+    # 过滤掉正方形小图（可能是头像）
+    try:
+        width = int(img.get('width', 0)) if img.get('width') else 0
+        height = int(img.get('height', 0)) if img.get('height') else 0
+        if width > 0 and height > 0:
+            if abs(width - height) < 20 and width < 200:
+                return False
+    except:
+        pass
+    
+    # 对于微信文章，前几张图片通常是内容图片
+    if index < 5:  # 前5张图片通常是内容图片
+        return True
+    
+    return True
+    
+def _matches_custom_filter(img: dict, custom_filter: str) -> bool:
+    """基于自定义提示词过滤图片"""
+    if not custom_filter:
+        return True
+    
+    # 将提示词转换为关键词列表
+    keywords = [kw.strip().lower() for kw in custom_filter.split(',')]
+    
+    # 检查图片属性是否匹配关键词
+    img_text = f"{img['alt']} {img.get('title', '')} {img['src']}".lower()
+    
+    for keyword in keywords:
+        if keyword in img_text:
+            return True
+    
+    return False
+    
+def _get_filter_reason(img: dict, filter_type: str) -> str:
+    """获取过滤原因说明"""
+    if filter_type == 'content_only':
+        if 'cover' in img['alt'].lower():
             return "封面图片"
-        elif filter_type == 'custom':
-            return "自定义过滤"
         else:
-            return "全部保留"
+            return "内容配图"
+    elif filter_type == 'cover_only':
+        return "封面图片"
+    elif filter_type == 'custom':
+        return "自定义过滤"
+    else:
+        return "全部保留"
 
 @app.route('/health')
 def health_check():
