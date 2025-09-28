@@ -52,7 +52,7 @@ def extract_article():
         for i, img in enumerate(article_data['images']):
             # 生成代理URL
             encoded_url = base64.b64encode(quote(img['absolute_url'], safe='').encode()).decode()
-            proxy_url = f"https://gpts-article-analyzer.vercel.app/image/{encoded_url}"
+            proxy_url = f"https://gpts-article-analyzer-z6axascum-coyis-projects.vercel.app/image/{encoded_url}"
             
             processed_images.append({
                 'original_url': img['absolute_url'],
