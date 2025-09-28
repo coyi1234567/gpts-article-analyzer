@@ -204,43 +204,61 @@ class WebScraper:
         """判断是否为有效的内容图片"""
         src = img_info['src'].lower()
         alt = img_info['alt'].lower()
+        title = img_info.get('title', '').lower()
         
         # 过滤掉明显的非内容图片
         exclude_patterns = [
             'logo', 'icon', 'button', 'banner', 'ad', 'advertisement',
             'sponsor', 'sponsored', 'sidebar', 'header', 'footer', 'nav',
             'social', 'share', 'comment', 'like', 'follow', 'loading',
-            'placeholder', 'blank', 'transparent'
+            'placeholder', 'blank', 'transparent', 'qrcode', 'qr-code',
+            'wechat', 'weixin', 'follow', 'subscribe', 'decorative', 'divider'
         ]
         
+        # 检查URL、alt、title中是否包含排除模式
         for pattern in exclude_patterns:
-            if pattern in src or pattern in alt:
+            if pattern in src or pattern in alt or pattern in title:
                 return False
-        
-        # 对于微信文章，放宽过滤条件
-        if 'mp.weixin.qq.com' in src or 'mmecoa.qpic.cn' in src:
-            # 微信文章的图片通常是内容图片
-            return True
         
         # 过滤掉太小的图片（可能是装饰性图片）
         try:
             width = int(img_info['width']) if img_info['width'] else 0
             height = int(img_info['height']) if img_info['height'] else 0
-            if width > 0 and height > 0 and (width < 50 or height < 50):
+            if width > 0 and height > 0 and (width < 100 or height < 100):
                 return False
         except:
             pass
         
-        # 如果图片URL包含常见的内容图片标识，则认为是有效的
-        content_indicators = [
-            'image', 'img', 'photo', 'pic', 'picture', 'jpg', 'jpeg', 'png', 'gif', 'webp'
-        ]
+        # 过滤掉明显的头像图片（通常是小尺寸的正方形）
+        try:
+            width = int(img_info['width']) if img_info['width'] else 0
+            height = int(img_info['height']) if img_info['height'] else 0
+            if width > 0 and height > 0:
+                # 如果图片是正方形且小于200px，很可能是头像
+                if abs(width - height) < 20 and width < 200:
+                    return False
+        except:
+            pass
         
-        for indicator in content_indicators:
-            if indicator in src:
-                return True
+        # 保留封面图片
+        if 'cover' in alt or 'cover' in title:
+            return True
         
-        return True  # 默认认为所有图片都是有效的
+        # 对于微信文章，进一步判断
+        if 'mp.weixin.qq.com' in src or 'mmecoa.qpic.cn' in src or 'mmbiz.qpic.cn' in src:
+            # 微信文章的图片，但排除明显的头像和装饰图片
+            # 如果alt为空且图片很小，可能是装饰图片
+            if not alt and not title:
+                try:
+                    width = int(img_info['width']) if img_info['width'] else 0
+                    height = int(img_info['height']) if img_info['height'] else 0
+                    if width > 0 and height > 0 and (width < 200 or height < 200):
+                        return False
+                except:
+                    pass
+            return True
+        
+        return True
     
     def _extract_author(self, soup: BeautifulSoup) -> str:
         """提取作者信息"""
