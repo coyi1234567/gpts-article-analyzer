@@ -133,24 +133,53 @@ class WebScraper:
     def _extract_images(self, soup: BeautifulSoup, base_url: str) -> List[Dict]:
         """提取文章中的图片"""
         images = []
+        
+        # 1. 查找所有img标签
         img_tags = soup.find_all('img')
         
-        for img in img_tags:
+        # 2. 查找微信文章特有的图片元素
+        # 微信文章可能使用data-src或其他属性
+        wechat_imgs = soup.find_all(['img', 'div'], attrs={'data-src': True})
+        
+        # 3. 查找背景图片
+        bg_imgs = soup.find_all(attrs={'style': re.compile(r'background-image')})
+        
+        # 合并所有图片元素
+        all_img_elements = img_tags + wechat_imgs + bg_imgs
+        
+        for img in all_img_elements:
             img_info = {
                 'src': '',
                 'alt': '',
                 'title': '',
                 'width': '',
                 'height': '',
-                'absolute_url': ''
+                'absolute_url': '',
+                'type': 'img_tag'
             }
             
             # 获取图片属性
-            img_info['src'] = img.get('src', '')
-            img_info['alt'] = img.get('alt', '')
-            img_info['title'] = img.get('title', '')
-            img_info['width'] = img.get('width', '')
-            img_info['height'] = img.get('height', '')
+            if img.name == 'img':
+                img_info['src'] = img.get('src', '') or img.get('data-src', '') or img.get('data-original', '')
+                img_info['alt'] = img.get('alt', '')
+                img_info['title'] = img.get('title', '')
+                img_info['width'] = img.get('width', '')
+                img_info['height'] = img.get('height', '')
+                img_info['type'] = 'img_tag'
+            else:
+                # 处理其他元素
+                img_info['src'] = img.get('data-src', '') or img.get('data-original', '')
+                img_info['alt'] = img.get('alt', '')
+                img_info['title'] = img.get('title', '')
+                img_info['type'] = 'data_src'
+                
+                # 处理背景图片
+                style = img.get('style', '')
+                if 'background-image' in style:
+                    bg_match = re.search(r'background-image:\s*url\(["\']?([^"\']+)["\']?\)', style)
+                    if bg_match:
+                        img_info['src'] = bg_match.group(1)
+                        img_info['type'] = 'background_image'
             
             # 转换为绝对URL
             if img_info['src']:
@@ -160,34 +189,58 @@ class WebScraper:
                 if self._is_valid_content_image(img_info):
                     images.append(img_info)
         
-        return images
+        # 4. 去重（基于URL）
+        seen_urls = set()
+        unique_images = []
+        for img in images:
+            if img['absolute_url'] not in seen_urls:
+                seen_urls.add(img['absolute_url'])
+                unique_images.append(img)
+        
+        logger.info(f"找到 {len(unique_images)} 张图片")
+        return unique_images
     
     def _is_valid_content_image(self, img_info: Dict) -> bool:
         """判断是否为有效的内容图片"""
         src = img_info['src'].lower()
         alt = img_info['alt'].lower()
         
-        # 过滤掉常见的非内容图片
+        # 过滤掉明显的非内容图片
         exclude_patterns = [
-            'logo', 'icon', 'avatar', 'button', 'banner', 'ad', 'advertisement',
+            'logo', 'icon', 'button', 'banner', 'ad', 'advertisement',
             'sponsor', 'sponsored', 'sidebar', 'header', 'footer', 'nav',
-            'social', 'share', 'comment', 'like', 'follow'
+            'social', 'share', 'comment', 'like', 'follow', 'loading',
+            'placeholder', 'blank', 'transparent'
         ]
         
         for pattern in exclude_patterns:
             if pattern in src or pattern in alt:
                 return False
         
+        # 对于微信文章，放宽过滤条件
+        if 'mp.weixin.qq.com' in src or 'mmecoa.qpic.cn' in src:
+            # 微信文章的图片通常是内容图片
+            return True
+        
         # 过滤掉太小的图片（可能是装饰性图片）
         try:
             width = int(img_info['width']) if img_info['width'] else 0
             height = int(img_info['height']) if img_info['height'] else 0
-            if width > 0 and height > 0 and (width < 100 or height < 100):
+            if width > 0 and height > 0 and (width < 50 or height < 50):
                 return False
         except:
             pass
         
-        return True
+        # 如果图片URL包含常见的内容图片标识，则认为是有效的
+        content_indicators = [
+            'image', 'img', 'photo', 'pic', 'picture', 'jpg', 'jpeg', 'png', 'gif', 'webp'
+        ]
+        
+        for indicator in content_indicators:
+            if indicator in src:
+                return True
+        
+        return True  # 默认认为所有图片都是有效的
     
     def _extract_author(self, soup: BeautifulSoup) -> str:
         """提取作者信息"""
