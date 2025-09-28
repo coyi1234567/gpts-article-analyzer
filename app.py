@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from web_scraper import WebScraper
 import logging
+import requests
 
 # 设置日志
 logging.basicConfig(level=logging.INFO)
