@@ -1,15 +1,29 @@
+"""
+🌐 网页内容抓取器
+支持多平台文章内容提取，包括文字和图片
+
+支持平台：
+- 微信公众平台
+- 小红书
+- 知乎
+- 微博
+- 今日头条
+- 其他主流平台
+"""
+
+import re
+import logging
+from typing import Dict, List, Optional
+from urllib.parse import urljoin, urlparse
+
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin, urlparse
-import re
-import time
-from typing import Dict, List, Optional, Tuple
+
 from config import Config
-import logging
 
 # 设置日志
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 class WebScraper:
     """网页内容抓取器，支持图文内容提取"""
@@ -25,6 +39,34 @@ class WebScraper:
             'Upgrade-Insecure-Requests': '1',
         })
         self.timeout = Config.TIMEOUT
+        
+        # 平台特定的选择器配置
+        self.platform_selectors = {
+            'wechat': {
+                'title': ['h1', '.rich_media_title', '#activity-name'],
+                'content': ['#js_content', '.rich_media_content'],
+                'author': ['.rich_media_meta_text', '.profile_nickname'],
+                'time': ['.rich_media_meta_text', '#publish_time']
+            },
+            'zhihu': {
+                'title': ['h1', '.QuestionHeader-title'],
+                'content': ['.RichContent', '.AnswerItem'],
+                'author': ['.AuthorInfo-name', '.UserLink-link'],
+                'time': ['.ContentItem-time']
+            },
+            'weibo': {
+                'title': ['h1', '.WB_text'],
+                'content': ['.WB_text', '.WB_detail'],
+                'author': ['.WB_info', '.WB_name'],
+                'time': ['.WB_from', '.WB_time']
+            },
+            'xiaohongshu': {
+                'title': ['.title', '.note-title'],
+                'content': ['.content', '.note-content'],
+                'author': ['.author', '.user-name'],
+                'time': ['.time', '.publish-time']
+            }
+        }
     
     def scrape_article(self, url: str) -> Dict:
         """
@@ -46,39 +88,65 @@ class WebScraper:
             # 解析HTML
             soup = BeautifulSoup(response.content, 'html.parser')
             
+            # 识别平台
+            platform = self._identify_platform(url)
+            
             # 提取文章信息
             article_info = {
                 'url': url,
-                'title': self._extract_title(soup),
-                'content': self._extract_content(soup),
+                'platform': platform,
+                'title': self._extract_title(soup, platform),
+                'content': self._extract_content(soup, platform),
                 'images': self._extract_images(soup, url),
-                'author': self._extract_author(soup),
-                'publish_time': self._extract_publish_time(soup),
+                'author': self._extract_author(soup, platform),
+                'publish_time': self._extract_publish_time(soup, platform),
                 'summary': self._extract_summary(soup),
                 'tags': self._extract_tags(soup),
-                'raw_html': str(soup)
+                'word_count': 0,  # 将在内容提取后计算
+                'image_count': 0  # 将在图片提取后计算
             }
             
-            logger.info(f"文章抓取完成: {article_info['title']}")
+            # 计算统计信息
+            article_info['word_count'] = len(article_info['content'])
+            article_info['image_count'] = len(article_info['images'])
+            
+            logger.info(f"文章抓取完成: {article_info['title']} (字数: {article_info['word_count']}, 图片: {article_info['image_count']})")
             return article_info
             
+        except requests.exceptions.RequestException as e:
+            logger.error(f"网络请求失败: {url}, 错误: {str(e)}")
+            return self._create_error_response(url, f"网络请求失败: {str(e)}")
         except Exception as e:
             logger.error(f"抓取文章失败: {url}, 错误: {str(e)}")
-            return {
-                'url': url,
-                'error': str(e),
-                'title': '',
-                'content': '',
-                'images': [],
-                'author': '',
-                'publish_time': '',
-                'summary': '',
-                'tags': []
-            }
+            return self._create_error_response(url, str(e))
     
-    def _extract_title(self, soup: BeautifulSoup) -> str:
+    def _identify_platform(self, url: str) -> str:
+        """识别文章平台"""
+        domain = urlparse(url).netloc.lower()
+        
+        if 'mp.weixin.qq.com' in domain:
+            return 'wechat'
+        elif 'zhihu.com' in domain:
+            return 'zhihu'
+        elif 'weibo.com' in domain:
+            return 'weibo'
+        elif 'xiaohongshu.com' in domain:
+            return 'xiaohongshu'
+        elif 'toutiao.com' in domain:
+            return 'toutiao'
+        else:
+            return 'other'
+    
+    def _extract_title(self, soup: BeautifulSoup, platform: str) -> str:
         """提取文章标题"""
-        # 尝试多种标题选择器
+        # 尝试平台特定选择器
+        if platform in self.platform_selectors:
+            for selector in self.platform_selectors[platform]['title']:
+                title_elem = soup.select_one(selector)
+                if title_elem and title_elem.get_text(strip=True):
+                    return title_elem.get_text(strip=True)
+        
+        # 通用选择器
         title_selectors = [
             'h1',
             '.article-title',
@@ -92,17 +160,30 @@ class WebScraper:
         for selector in title_selectors:
             title_elem = soup.select_one(selector)
             if title_elem and title_elem.get_text(strip=True):
-                return title_elem.get_text(strip=True)
+                title = title_elem.get_text(strip=True)
+                # 过滤掉网站名称
+                if ' - ' in title:
+                    title = title.split(' - ')[0]
+                return title
         
         return soup.title.get_text(strip=True) if soup.title else ""
     
-    def _extract_content(self, soup: BeautifulSoup) -> str:
+    def _extract_content(self, soup: BeautifulSoup, platform: str) -> str:
         """提取文章正文内容"""
         # 移除不需要的元素
-        for element in soup(['script', 'style', 'nav', 'header', 'footer', 'aside', 'advertisement']):
+        for element in soup(['script', 'style', 'nav', 'header', 'footer', 'aside', 'advertisement', 'ad']):
             element.decompose()
         
-        # 尝试多种内容选择器
+        # 尝试平台特定选择器
+        if platform in self.platform_selectors:
+            for selector in self.platform_selectors[platform]['content']:
+                content_elem = soup.select_one(selector)
+                if content_elem:
+                    content = self._clean_text(content_elem.get_text())
+                    if len(content) > 100:  # 确保内容足够长
+                        return content
+        
+        # 通用内容选择器
         content_selectors = [
             '.article-content',
             '.post-content',
@@ -118,7 +199,6 @@ class WebScraper:
         for selector in content_selectors:
             content_elem = soup.select_one(selector)
             if content_elem:
-                # 清理内容
                 content = self._clean_text(content_elem.get_text())
                 if len(content) > 100:  # 确保内容足够长
                     return content
@@ -138,7 +218,6 @@ class WebScraper:
         img_tags = soup.find_all('img')
         
         # 2. 查找微信文章特有的图片元素
-        # 微信文章可能使用data-src或其他属性
         wechat_imgs = soup.find_all(['img', 'div'], attrs={'data-src': True})
         
         # 3. 查找背景图片
@@ -189,7 +268,7 @@ class WebScraper:
                 if self._is_valid_content_image(img_info):
                     images.append(img_info)
         
-        # 4. 去重（基于URL）
+        # 去重（基于URL）
         seen_urls = set()
         unique_images = []
         for img in images:
@@ -197,7 +276,7 @@ class WebScraper:
                 seen_urls.add(img['absolute_url'])
                 unique_images.append(img)
         
-        logger.info(f"找到 {len(unique_images)} 张图片")
+        logger.info(f"找到 {len(unique_images)} 张有效图片")
         return unique_images
     
     def _is_valid_content_image(self, img_info: Dict) -> bool:
@@ -229,17 +308,6 @@ class WebScraper:
         except:
             pass
         
-        # 过滤掉明显的头像图片（通常是小尺寸的正方形）
-        try:
-            width = int(img_info['width']) if img_info['width'] else 0
-            height = int(img_info['height']) if img_info['height'] else 0
-            if width > 0 and height > 0:
-                # 如果图片是正方形且小于200px，很可能是头像
-                if abs(width - height) < 20 and width < 200:
-                    return False
-        except:
-            pass
-        
         # 保留封面图片
         if 'cover' in alt or 'cover' in title:
             return True
@@ -247,7 +315,6 @@ class WebScraper:
         # 对于微信文章，进一步判断
         if 'mp.weixin.qq.com' in src or 'mmecoa.qpic.cn' in src or 'mmbiz.qpic.cn' in src:
             # 微信文章的图片，但排除明显的头像和装饰图片
-            # 如果alt为空且图片很小，可能是装饰图片
             if not alt and not title:
                 try:
                     width = int(img_info['width']) if img_info['width'] else 0
@@ -258,7 +325,6 @@ class WebScraper:
                     pass
             
             # 对于微信文章，如果图片URL包含特定模式，可能是装饰图片
-            # 检查URL中是否包含明显的装饰图片标识
             decorative_patterns = [
                 'avatar', 'head', 'profile', 'icon', 'logo', 'banner', 'ad'
             ]
@@ -270,8 +336,16 @@ class WebScraper:
         
         return True
     
-    def _extract_author(self, soup: BeautifulSoup) -> str:
+    def _extract_author(self, soup: BeautifulSoup, platform: str) -> str:
         """提取作者信息"""
+        # 尝试平台特定选择器
+        if platform in self.platform_selectors:
+            for selector in self.platform_selectors[platform]['author']:
+                author_elem = soup.select_one(selector)
+                if author_elem:
+                    return author_elem.get_text(strip=True)
+        
+        # 通用选择器
         author_selectors = [
             '.author',
             '.byline',
@@ -293,8 +367,16 @@ class WebScraper:
         
         return ""
     
-    def _extract_publish_time(self, soup: BeautifulSoup) -> str:
+    def _extract_publish_time(self, soup: BeautifulSoup, platform: str) -> str:
         """提取发布时间"""
+        # 尝试平台特定选择器
+        if platform in self.platform_selectors:
+            for selector in self.platform_selectors[platform]['time']:
+                time_elem = soup.select_one(selector)
+                if time_elem:
+                    return time_elem.get_text(strip=True)
+        
+        # 通用选择器
         time_selectors = [
             '.publish-time',
             '.post-time',
@@ -377,21 +459,23 @@ class WebScraper:
         text = re.sub(r'[^\w\s\u4e00-\u9fff.,!?;:()（）【】""''""''，。！？；：]', '', text)
         return text.strip()
     
-    def download_image(self, image_url: str) -> Optional[bytes]:
-        """下载图片内容"""
-        try:
-            response = self.session.get(image_url, timeout=self.timeout)
-            response.raise_for_status()
-            
-            # 检查图片大小
-            if len(response.content) > Config.MAX_IMAGE_SIZE:
-                logger.warning(f"图片过大，跳过: {image_url}")
-                return None
-            
-            return response.content
-        except Exception as e:
-            logger.error(f"下载图片失败: {image_url}, 错误: {str(e)}")
-            return None
+    def _create_error_response(self, url: str, error_message: str) -> Dict:
+        """创建错误响应"""
+        return {
+            'url': url,
+            'error': error_message,
+            'title': '',
+            'content': '',
+            'images': [],
+            'author': '',
+            'publish_time': '',
+            'summary': '',
+            'tags': [],
+            'platform': 'unknown',
+            'word_count': 0,
+            'image_count': 0
+        }
+
 
 # 测试函数
 if __name__ == "__main__":
@@ -406,4 +490,4 @@ if __name__ == "__main__":
     print("图片数量:", len(result['images']))
     print("作者:", result['author'])
     print("发布时间:", result['publish_time'])
-
+    print("平台:", result['platform'])

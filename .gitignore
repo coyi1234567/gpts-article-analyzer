@@ -19,13 +19,16 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual Environment
 venv/
 env/
 ENV/
+env.bak/
+venv.bak/
 
-# Environment variables
+# Environment Variables
 .env
 .env.local
 .env.development.local
@@ -37,25 +40,51 @@ ENV/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
 # Logs
 *.log
+logs/
 
 # Temporary files
 *.tmp
 *.temp
+*.bak
+*.backup
 
-# 测试文件
+# Test files
 test_*.py
 *_test.py
+tests/
 
-# 文档草稿
-draft_*.md
-temp_*.md
+# Documentation drafts
+*.md.bak
+*.md.tmp
 
-# 缓存文件
-*.cache
+# Deployment files
+deploy.sh
+docker-compose.yml
+Dockerfile
+Procfile
+railway.json
+render.yaml
+
+# Archive files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Local development
+ngrok
+ngrok.zip
+local_config.py

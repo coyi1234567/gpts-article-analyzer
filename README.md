@@ -1,27 +1,57 @@
-# 🤖 超级阅读研究助手 - GPTs版本
+# 🤖 超级阅读研究助手 - 世界一流的智能文章解读器
 
-一个专门为GPTs设计的智能文章解读器，支持微信、小红书、知乎、微博等多平台文章内容提取和图文分析。
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-000000?style=for-the-badge&logo=vercel)](https://vercel.com)
+[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-2.0+-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-## ✨ 功能特点
+> 🌟 **世界一流的智能文章解读器**，专为GPTs设计，支持多平台文章内容提取和图文结合分析，让您的研究工作更加高效！
 
-- 🚀 **多平台支持**：支持微信公众平台、小红书、知乎、微博、今日头条等主流平台
-- 🖼️ **图文结合分析**：不仅提取文字内容，还能获取所有图片并生成代理链接
-- 🔍 **智能图片过滤**：自动过滤装饰性图片，保留有价值的内容图片
-- 🌐 **图片代理服务**：提供图片代理接口，绕过防盗链限制
-- 📱 **GPTs集成**：专为GPTs设计，无需API密钥，直接使用GPTs的Vision功能
-- ⚡ **高性能**：支持并发处理，响应速度快
-- 📝 **小字总结**：每张图片下方都有简洁的总结说明
+## ✨ 核心特性
 
-## 🚀 快速部署
+### 🚀 多平台支持
+- **微信公众平台** - 完美支持微信公众号文章
+- **小红书** - 支持小红书笔记内容提取
+- **知乎** - 支持知乎文章和回答
+- **微博** - 支持微博长文内容
+- **今日头条** - 支持头条文章
+- **其他平台** - 智能适配主流内容平台
 
-### 1. Fork并部署到Vercel
+### 🖼️ 图文结合分析
+- **完整图片提取** - 提取文章中的所有图片，包括封面图、配图、数据图表等
+- **智能图片过滤** - 自动过滤装饰性图片，保留有价值的内容图片
+- **图片代理服务** - 提供图片代理接口，完美解决防盗链问题
+- **小字总结** - 每张图片下方都有简洁的总结说明
+- **7天缓存机制** - 图片缓存7天，提升访问速度
+
+### 🧠 智能分析框架
+- **结构化分析** - 按照专业框架进行文章分析
+- **真伪核查** - 对关键论点进行真伪核查和谣言识别
+- **综合评价** - 提供文章价值评估和可信度评级
+- **多维度解读** - 从学术、新闻、教育、实用等多个维度分析
+
+### ⚡ 高性能设计
+- **并发处理** - 支持高并发请求处理
+- **智能缓存** - 多层缓存机制，提升响应速度
+- **错误处理** - 完善的异常捕获和错误处理
+- **安全防护** - CORS支持、请求头伪装、超时保护
+
+## 🚀 快速开始
+
+### 1. 一键部署到Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/coyi1234567/gpts-article-analyzer)
+
+#### 手动部署步骤：
 
 1. **Fork仓库**
-   - 访问：https://github.com/coyi1234567/gpts-article-analyzer
-   - 点击右上角"Fork"按钮
+   ```bash
+   # 访问并Fork仓库
+   https://github.com/coyi1234567/gpts-article-analyzer
+   ```
 
 2. **连接Vercel**
-   - 访问：https://vercel.com
+   - 访问 [Vercel](https://vercel.com)
    - 使用GitHub账号登录
    - 点击"New Project"
    - 选择您Fork的仓库
@@ -33,33 +63,23 @@
    - Output Directory：留空
    - Install Command：`pip install -r requirements.txt`
 
-4. **部署**
+4. **部署完成**
    - 点击"Deploy"
    - 等待部署完成（约2-3分钟）
+   - 获得部署地址：`https://gpts-article-analyzer.vercel.app`
 
-### 2. 获取部署地址
+### 2. 配置GPTs
 
-部署完成后，您会得到：
-- **生产域名**：`https://gpts-article-analyzer.vercel.app`（固定不变）
-- **部署地址**：`https://gpts-article-analyzer-xxx.vercel.app`（每次部署会变）
-
-**重要**：我们使用固定的生产域名，不会因为重新部署而改变。
-
-## 🤖 配置GPTs
-
-### 1. 创建GPTs
-
-1. 访问：https://chat.openai.com/gpts
+#### 创建GPTs
+1. 访问 [ChatGPT GPTs](https://chat.openai.com/gpts)
 2. 点击"Create a GPT"
 3. 选择"Configure"标签
 
-### 2. 基本信息配置
-
+#### 基本信息配置
 - **Name**: `超级阅读研究助手`
-- **Description**: `专业的文章解读与核查助手，支持微信、小红书、知乎、微博等多平台内容分析，具备图文结合分析能力`
+- **Description**: `世界一流的智能文章解读器，支持微信、小红书、知乎、微博等多平台内容分析，具备图文结合分析能力`
 
-### 3. Instructions配置
-
+#### Instructions配置
 复制以下内容到GPTs的Instructions字段：
 
 ```
@@ -243,16 +263,16 @@
 - **每张图片下方必须有小字总结**，这是核心要求
 ```
 
-### 4. Actions配置
-
+#### Actions配置
 点击"Create new action"，在Schema中粘贴：
 
 ```json
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "文章提取API",
-    "version": "1.0.0"
+    "title": "超级阅读研究助手API",
+    "version": "1.0.0",
+    "description": "世界一流的智能文章解读器API"
   },
   "servers": [
     {
@@ -330,8 +350,7 @@
 
 **注意**：将服务器URL替换为您实际的部署地址。
 
-### 5. 保存并测试
-
+#### 保存并测试
 1. 点击右上角"Save"
 2. 选择"Only me"或"Anyone with a link"
 3. 测试GPTs功能
@@ -384,6 +403,23 @@ curl -X POST https://gpts-article-analyzer.vercel.app/extract \
 - `IMAGE_CACHE_DAYS`: 图片缓存天数（默认7天）
 - `IMAGE_CACHE_MAX_AGE`: 图片缓存最大年龄（默认604800秒）
 
+## 📊 性能优化
+
+### 1. 缓存策略
+- 图片缓存7天，减少重复请求
+- 支持CDN加速
+- 自动清理过期缓存
+
+### 2. 错误处理
+- 完善的异常捕获
+- 友好的错误提示
+- 自动重试机制
+
+### 3. 安全考虑
+- CORS跨域支持
+- 请求头伪装
+- 超时保护
+
 ## 🆘 故障排除
 
 ### 常见问题
@@ -403,17 +439,40 @@ curl -X POST https://gpts-article-analyzer.vercel.app/extract \
    - 确认Schema格式正确
    - 验证网络访问权限
 
+### 联系支持
+如遇到问题，请：
+1. 查看GitHub Issues
+2. 提交新的Issue
+3. 提供详细的错误信息
+
 ## 🎉 完成！
 
-恭喜！您已经成功部署了超级阅读研究助手。现在可以：
+恭喜！您已经成功部署了世界一流的超级阅读研究助手。现在可以：
 
 1. ✅ 在GPTs中分析任何文章链接
 2. ✅ 获得专业的图文结合分析
 3. ✅ 享受7天图片缓存服务
 4. ✅ 支持多平台内容抓取
+5. ✅ 体验世界一流的智能分析
 
 开始您的智能阅读之旅吧！🚀
 
 ---
 
 **注意**：本项目专为GPTs设计，无需OpenAI API密钥，直接使用GPTs的Vision功能进行图片分析。
+
+## 📄 许可证
+
+本项目采用MIT许可证 - 查看[LICENSE](LICENSE)文件了解详情。
+
+## 🤝 贡献
+
+欢迎提交Issue和Pull Request！让我们一起打造世界一流的阅读器！
+
+---
+
+<div align="center">
+
+**🌟 如果这个项目对您有帮助，请给个Star支持一下！🌟**
+
+</div>
