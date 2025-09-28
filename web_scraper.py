@@ -145,7 +145,7 @@ class WebScraper:
         bg_imgs = soup.find_all(attrs={'style': re.compile(r'background-image')})
         
         # 合并所有图片元素
-        all_img_elements = img_tags + wechat_imgs + bg_imgs
+        all_img_elements = list(img_tags) + list(wechat_imgs) + list(bg_imgs)
         
         for img in all_img_elements:
             img_info = {
