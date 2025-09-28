@@ -49,6 +49,13 @@ Thumbs.db
 *.tmp
 *.temp
 
-# ngrok
-ngrok
-ngrok.zip
+# 测试文件
+test_*.py
+*_test.py
+
+# 文档草稿
+draft_*.md
+temp_*.md
+
+# 缓存文件
+*.cache

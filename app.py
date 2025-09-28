@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from web_scraper import WebScraper
+from config import Config
 import logging
 import requests
 
@@ -84,10 +85,11 @@ def extract_article():
 
 @app.route('/image/<path:encoded_url>')
 def proxy_image(encoded_url):
-    """图片代理接口，用于绕过防盗链"""
+    """图片代理接口，用于绕过防盗链，支持7天缓存过期"""
     try:
         import base64
         from urllib.parse import unquote
+        from datetime import datetime, timedelta
         
         # 解码URL
         image_url = base64.b64decode(encoded_url.encode()).decode()
@@ -106,13 +108,18 @@ def proxy_image(encoded_url):
         response = requests.get(image_url, headers=headers, timeout=30, stream=True)
         response.raise_for_status()
         
-        # 返回图片
+        # 计算缓存过期时间
+        expires_date = datetime.utcnow() + timedelta(days=Config.IMAGE_CACHE_DAYS)
+        expires_str = expires_date.strftime('%a, %d %b %Y %H:%M:%S GMT')
+        
+        # 返回图片，设置缓存
         from flask import Response
         return Response(
             response.content,
             mimetype=response.headers.get('content-type', 'image/jpeg'),
             headers={
-                'Cache-Control': 'public, max-age=3600',
+                'Cache-Control': f'public, max-age={Config.IMAGE_CACHE_MAX_AGE}',
+                'Expires': expires_str,
                 'Access-Control-Allow-Origin': '*'
             }
         )
