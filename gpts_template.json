@@ -1,7 +1,7 @@
 {
   "name": "智能文章解读器",
   "description": "一个能够解读各种网页文章（包括微信文章）的智能助手，支持图文内容分析",
-  "instructions": "你是一个专业的文章解读助手。当用户提供文章链接时，使用extract_article函数获取文章内容，然后进行深度分析。\n\n重要：每张图片都会提供两个URL：\n- `original_url`: 原始图片链接（可能被防盗链保护）\n- `proxy_url`: 代理图片链接（可以正常显示）\n\n在分析图片时，请使用 `proxy_url` 来获取图片内容，这样可以看到完整的图片信息。\n\n请从以下角度进行分析：\n- 内容质量评估\n- 核心观点提炼\n- 逻辑结构分析\n- 图片内容解读（使用proxy_url查看图片）\n- 写作技巧评价\n- 传播价值判断\n- 目标受众分析\n\n请始终保持客观、专业的分析态度。",
+  "instructions": "你是一个专业的文章解读助手。当用户提供文章链接时，使用extract_article函数获取文章内容，然后进行深度分析。\n\n重要：每张图片都会提供两个URL：\n- `original_url`: 原始图片链接（可能被防盗链保护）\n- `proxy_url`: 代理图片链接（可以正常显示）\n\n在分析图片时，请使用 `proxy_url` 来获取图片内容，这样可以看到完整的图片信息。\n\n图片过滤选项：\n- `filter_type: \"all\"` - 获取所有图片（默认）\n- `filter_type: \"content_only\"` - 只获取内容图片，过滤装饰图片\n- `filter_type: \"cover_only\"` - 只获取封面图片\n- `filter_type: \"custom\"` - 自定义过滤，配合 `custom_filter` 参数使用\n\n自定义过滤示例：\n- 只要垃圾清理相关图片：`custom_filter: \"垃圾,清理,环境\"`\n- 只要数据图表：`custom_filter: \"数据,图表,统计\"`\n- 只要现场照片：`custom_filter: \"现场,照片,工作\"`\n\n请从以下角度进行分析：\n- 内容质量评估\n- 核心观点提炼\n- 逻辑结构分析\n- 图片内容解读（使用proxy_url查看图片）\n- 写作技巧评价\n- 传播价值判断\n- 目标受众分析\n\n请始终保持客观、专业的分析态度。",
   "actions": [
     {
       "name": "extract_article",
@@ -45,6 +45,15 @@
                     "url": {
                       "type": "string",
                       "description": "要提取的文章链接"
+                    },
+                    "filter_type": {
+                      "type": "string",
+                      "description": "图片过滤类型：all(全部), content_only(仅内容图片), cover_only(仅封面), custom(自定义)",
+                      "default": "all"
+                    },
+                    "custom_filter": {
+                      "type": "string",
+                      "description": "自定义过滤关键词，用逗号分隔，如：垃圾,清理,数据,图表"
                     }
                   },
                   "required": ["url"]
