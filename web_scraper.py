@@ -256,6 +256,16 @@ class WebScraper:
                         return False
                 except:
                     pass
+            
+            # 对于微信文章，如果图片URL包含特定模式，可能是装饰图片
+            # 检查URL中是否包含明显的装饰图片标识
+            decorative_patterns = [
+                'avatar', 'head', 'profile', 'icon', 'logo', 'banner', 'ad'
+            ]
+            for pattern in decorative_patterns:
+                if pattern in src:
+                    return False
+            
             return True
         
         return True
