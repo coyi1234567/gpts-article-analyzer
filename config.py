@@ -17,5 +17,5 @@ class Config:
     IMAGE_CACHE_MAX_AGE = 604800  # 7天 = 604800秒
     
     # 代理URL配置
-    PROXY_BASE_URL = os.getenv('PROXY_BASE_URL', 'https://gpts-article-analyzer-z6axascum-coyis-projects.vercel.app')
+    PROXY_BASE_URL = os.getenv('PROXY_BASE_URL', 'https://gpts-article-analyzer.vercel.app')
 

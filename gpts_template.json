@@ -26,7 +26,7 @@
     },
     "servers": [
       {
-        "url": "https://gpts-article-analyzer-z6axascum-coyis-projects.vercel.app",
+        "url": "https://gpts-article-analyzer.vercel.app",
         "description": "Vercel部署的API服务器"
       }
     ],
