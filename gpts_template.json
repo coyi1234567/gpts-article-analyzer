@@ -1,0 +1,96 @@
+{
+  "name": "智能文章解读器",
+  "description": "一个能够解读各种网页文章（包括微信文章）的智能助手，支持图文内容分析",
+  "instructions": "你是一个专业的文章解读助手。当用户提供文章链接时，使用extract_article函数获取文章内容，然后进行深度分析。\n\n请从以下角度进行分析：\n- 内容质量评估\n- 核心观点提炼\n- 逻辑结构分析\n- 图片内容解读（如果有图片）\n- 写作技巧评价\n- 传播价值判断\n- 目标受众分析\n\n请始终保持客观、专业的分析态度。",
+  "actions": [
+    {
+      "name": "extract_article",
+      "description": "提取文章内容",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "要提取的文章链接"
+          }
+        },
+        "required": ["url"]
+      }
+    }
+  ],
+  "openapi_schema": {
+    "openapi": "3.0.0",
+    "info": {
+      "title": "文章提取API",
+      "version": "1.0.0"
+    },
+    "servers": [
+      {
+        "url": "https://your-deployed-url.railway.app",
+        "description": "部署的API服务器"
+      }
+    ],
+    "paths": {
+      "/extract": {
+        "post": {
+          "summary": "提取文章内容",
+          "operationId": "extractArticle",
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {
+                      "type": "string",
+                      "description": "要提取的文章链接"
+                    }
+                  },
+                  "required": ["url"]
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "提取成功",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "success": {"type": "boolean"},
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "title": {"type": "string"},
+                          "content": {"type": "string"},
+                          "author": {"type": "string"},
+                          "publish_time": {"type": "string"},
+                          "summary": {"type": "string"},
+                          "images": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "url": {"type": "string"},
+                                "alt": {"type": "string"},
+                                "title": {"type": "string"}
+                              }
+                            }
+                          },
+                          "tags": {"type": "array", "items": {"type": "string"}}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
