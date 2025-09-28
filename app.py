@@ -189,12 +189,21 @@ def proxy_image(encoded_url):
         # 设置请求头，模拟浏览器访问
         headers = {
             'User-Agent': Config.USER_AGENT,
-            'Referer': 'https://mp.weixin.qq.com/',
             'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
             'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
         }
+        
+        # 根据图片来源设置合适的Referer
+        if 'csdn.net' in image_url:
+            headers['Referer'] = 'https://blog.csdn.net/'
+        elif 'weixin.qq.com' in image_url:
+            headers['Referer'] = 'https://mp.weixin.qq.com/'
+        elif 'zhihu.com' in image_url:
+            headers['Referer'] = 'https://www.zhihu.com/'
+        else:
+            headers['Referer'] = 'https://www.google.com/'
         
         # 获取图片
         response = requests.get(image_url, headers=headers, timeout=Config.TIMEOUT, stream=True)

@@ -48,6 +48,12 @@ class WebScraper:
                 'author': ['.rich_media_meta_text', '.profile_nickname'],
                 'time': ['.rich_media_meta_text', '#publish_time']
             },
+            'csdn': {
+                'title': ['h1.title-article-title', '.title-article-title', 'h1', '.article-title'],
+                'content': ['#article_content', '.markdown_views', '.article_content', '.blog-content-box'],
+                'author': ['.follow-nickName', '.user-name', '.author-name'],
+                'time': ['.time', '.publish-time', '.article-info .time']
+            },
             'zhihu': {
                 'title': ['h1', '.QuestionHeader-title'],
                 'content': ['.RichContent', '.AnswerItem'],
@@ -220,11 +226,14 @@ class WebScraper:
         # 2. 查找微信文章特有的图片元素
         wechat_imgs = soup.find_all(['img', 'div'], attrs={'data-src': True})
         
-        # 3. 查找背景图片
+        # 3. 查找CSDN特有的图片元素
+        csdn_imgs = soup.find_all(['img'], attrs={'data-src': True})
+        
+        # 4. 查找背景图片
         bg_imgs = soup.find_all(attrs={'style': re.compile(r'background-image')})
         
         # 合并所有图片元素
-        all_img_elements = list(img_tags) + list(wechat_imgs) + list(bg_imgs)
+        all_img_elements = list(img_tags) + list(wechat_imgs) + list(csdn_imgs) + list(bg_imgs)
         
         for img in all_img_elements:
             img_info = {
@@ -239,7 +248,11 @@ class WebScraper:
             
             # 获取图片属性
             if img.name == 'img':
-                img_info['src'] = img.get('src', '') or img.get('data-src', '') or img.get('data-original', '')
+                # 优先获取data-src，然后是src，最后是data-original
+                img_info['src'] = (img.get('data-src', '') or 
+                                 img.get('src', '') or 
+                                 img.get('data-original', '') or
+                                 img.get('data-lazy-src', ''))
                 img_info['alt'] = img.get('alt', '')
                 img_info['title'] = img.get('title', '')
                 img_info['width'] = img.get('width', '')
@@ -247,7 +260,9 @@ class WebScraper:
                 img_info['type'] = 'img_tag'
             else:
                 # 处理其他元素
-                img_info['src'] = img.get('data-src', '') or img.get('data-original', '')
+                img_info['src'] = (img.get('data-src', '') or 
+                                 img.get('data-original', '') or
+                                 img.get('data-lazy-src', ''))
                 img_info['alt'] = img.get('alt', '')
                 img_info['title'] = img.get('title', '')
                 img_info['type'] = 'data_src'
@@ -291,7 +306,8 @@ class WebScraper:
             'sponsor', 'sponsored', 'sidebar', 'header', 'footer', 'nav',
             'social', 'share', 'comment', 'like', 'follow', 'loading',
             'placeholder', 'blank', 'transparent', 'qrcode', 'qr-code',
-            'wechat', 'weixin', 'follow', 'subscribe', 'decorative', 'divider'
+            'wechat', 'weixin', 'follow', 'subscribe', 'decorative', 'divider',
+            'avatar', 'head', 'profile', 'csdn', 'blog', 'user' # 排除头像和CSDN装饰图片
         ]
         
         # 检查URL、alt、title中是否包含排除模式
