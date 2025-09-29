@@ -186,84 +186,14 @@ def proxy_image(encoded_url):
         
         logger.info(f"代理图片请求: {image_url}")
         
-        # 对于微信图片，使用多种代理服务
+        # 对于微信图片，直接返回错误信息
         if 'mmbiz.qpic.cn' in image_url or 'mmecoa.qpic.cn' in image_url:
-            # 尝试多种代理服务
-            proxy_services = [
-                f"https://images.weserv.nl/?url={quote(image_url, safe='')}",
-                f"https://pic1.xuehuaimg.com/proxy/{quote(image_url, safe='')}",
-                f"https://img.nga.178.com/attachments/mon_202409/29/{quote(image_url, safe='')}"
-            ]
-            
-            response = None
-            for proxy_url in proxy_services:
-                try:
-                    logger.info(f"尝试代理服务: {proxy_url}")
-                    headers = {
-                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-                        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
-                        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-                        'Accept-Encoding': 'gzip, deflate, br',
-                        'Connection': 'keep-alive',
-                    }
-                    
-                    response = requests.get(proxy_url, headers=headers, timeout=Config.TIMEOUT, stream=True)
-                    response.raise_for_status()
-                    
-                    # 验证返回的内容确实是图片
-                    content_type = response.headers.get('content-type', '').lower()
-                    if 'image/' not in content_type:
-                        logger.warning(f"代理服务返回非图片内容: {content_type}")
-                        continue
-                    
-                    # 检查图片大小，微信错误图片通常很小
-                    content_length = len(response.content)
-                    if content_length < 10000:  # 小于10KB可能是错误图片
-                        logger.warning(f"图片太小，可能是错误页面: {content_length} bytes")
-                        continue
-                    
-                    # 检查是否包含微信错误图片的特征
-                    # 微信错误图片通常是白色背景，尺寸较小
-                    try:
-                        from PIL import Image
-                        import io
-                        img = Image.open(io.BytesIO(response.content))
-                        width, height = img.size
-                        
-                        # 微信错误图片通常是正方形或接近正方形
-                        if abs(width - height) < 50 and width < 500:
-                            logger.warning(f"图片尺寸异常，可能是微信错误页面: {width}x{height}")
-                            continue
-                            
-                    except Exception as e:
-                        logger.warning(f"图片分析失败: {str(e)}")
-                        continue
-                    
-                    logger.info(f"代理服务成功: {proxy_url}")
-                    break
-                except Exception as e:
-                    logger.warning(f"代理服务失败: {proxy_url}, 错误: {str(e)}")
-                    continue
-            
-            if response is None:
-                raise Exception("所有代理服务都失败了")
-            
-            # 计算缓存过期时间
-            expires_date = datetime.utcnow() + timedelta(days=Config.IMAGE_CACHE_DAYS)
-            expires_str = expires_date.strftime('%a, %d %b %Y %H:%M:%S GMT')
-            
-            # 返回图片，设置缓存
-            return Response(
-                response.content,
-                mimetype=response.headers.get('content-type', 'image/jpeg'),
-                headers={
-                    'Cache-Control': f'public, max-age={Config.IMAGE_CACHE_MAX_AGE}',
-                    'Expires': expires_str,
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'GET',
-                    'Access-Control-Allow-Headers': 'Content-Type'
-                }
-            )
+            logger.warning(f"微信图片无法代理: {image_url}")
+            return jsonify({
+                'error': '微信图片受反盗链保护，无法直接访问',
+                'message': '建议用户直接提供图片内容或使用其他平台的文章',
+                'original_url': image_url
+            }), 403
         
         # 对于其他图片，使用原有逻辑
         else:
