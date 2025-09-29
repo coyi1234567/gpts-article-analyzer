@@ -210,10 +210,33 @@ def proxy_image(encoded_url):
                     response = requests.get(proxy_url, headers=headers, timeout=Config.TIMEOUT, stream=True)
                     response.raise_for_status()
                     
-                    # 简单验证返回的内容
+                    # 验证返回的内容确实是图片
                     content_type = response.headers.get('content-type', '').lower()
                     if 'image/' not in content_type:
                         logger.warning(f"代理服务返回非图片内容: {content_type}")
+                        continue
+                    
+                    # 检查图片大小，微信错误图片通常很小
+                    content_length = len(response.content)
+                    if content_length < 10000:  # 小于10KB可能是错误图片
+                        logger.warning(f"图片太小，可能是错误页面: {content_length} bytes")
+                        continue
+                    
+                    # 检查是否包含微信错误图片的特征
+                    # 微信错误图片通常是白色背景，尺寸较小
+                    try:
+                        from PIL import Image
+                        import io
+                        img = Image.open(io.BytesIO(response.content))
+                        width, height = img.size
+                        
+                        # 微信错误图片通常是正方形或接近正方形
+                        if abs(width - height) < 50 and width < 500:
+                            logger.warning(f"图片尺寸异常，可能是微信错误页面: {width}x{height}")
+                            continue
+                            
+                    except Exception as e:
+                        logger.warning(f"图片分析失败: {str(e)}")
                         continue
                     
                     logger.info(f"代理服务成功: {proxy_url}")
