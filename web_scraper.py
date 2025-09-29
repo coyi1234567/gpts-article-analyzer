@@ -5,7 +5,6 @@
 支持平台：
 - 微信公众平台
 - 小红书
-- 知乎
 - 微博
 - 今日头条
 - 其他主流平台
@@ -53,12 +52,6 @@ class WebScraper:
                 'content': ['#article_content', '.markdown_views', '.article_content', '.blog-content-box'],
                 'author': ['.follow-nickName', '.user-name', '.author-name'],
                 'time': ['.time', '.publish-time', '.article-info .time']
-            },
-            'zhihu': {
-                'title': ['h1', '.QuestionHeader-title'],
-                'content': ['.RichContent', '.AnswerItem'],
-                'author': ['.AuthorInfo-name', '.UserLink-link'],
-                'time': ['.ContentItem-time']
             },
             'weibo': {
                 'title': ['h1', '.WB_text'],
@@ -132,8 +125,6 @@ class WebScraper:
         
         if 'mp.weixin.qq.com' in domain:
             return 'wechat'
-        elif 'zhihu.com' in domain:
-            return 'zhihu'
         elif 'weibo.com' in domain:
             return 'weibo'
         elif 'xiaohongshu.com' in domain:
