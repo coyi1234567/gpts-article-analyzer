@@ -209,6 +209,19 @@ def proxy_image(encoded_url):
                     
                     response = requests.get(proxy_url, headers=headers, timeout=Config.TIMEOUT, stream=True)
                     response.raise_for_status()
+                    
+                    # 验证返回的内容确实是图片
+                    content_type = response.headers.get('content-type', '').lower()
+                    if 'image/' not in content_type:
+                        logger.warning(f"代理服务返回非图片内容: {content_type}")
+                        continue
+                    
+                    # 检查内容是否包含微信错误信息
+                    content_preview = response.content[:500]
+                    if b'微信公众平台' in content_preview or b'未经允许不可引用' in content_preview:
+                        logger.warning(f"代理服务返回微信错误页面")
+                        continue
+                    
                     logger.info(f"代理服务成功: {proxy_url}")
                     break
                 except Exception as e:
