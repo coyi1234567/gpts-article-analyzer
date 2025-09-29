@@ -186,43 +186,81 @@ def proxy_image(encoded_url):
         
         logger.info(f"代理图片请求: {image_url}")
         
-        # 设置请求头，模拟浏览器访问
-        headers = {
-            'User-Agent': Config.USER_AGENT,
-            'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
-            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-        }
-        
-        # 根据图片来源设置合适的Referer
-        if 'csdn.net' in image_url:
-            headers['Referer'] = 'https://blog.csdn.net/'
-        elif 'weixin.qq.com' in image_url:
-            headers['Referer'] = 'https://mp.weixin.qq.com/'
-        else:
-            headers['Referer'] = 'https://www.google.com/'
-        
-        # 获取图片
-        response = requests.get(image_url, headers=headers, timeout=Config.TIMEOUT, stream=True)
-        response.raise_for_status()
-        
-        # 计算缓存过期时间
-        expires_date = datetime.utcnow() + timedelta(days=Config.IMAGE_CACHE_DAYS)
-        expires_str = expires_date.strftime('%a, %d %b %Y %H:%M:%S GMT')
-        
-        # 返回图片，设置缓存
-        return Response(
-            response.content,
-            mimetype=response.headers.get('content-type', 'image/jpeg'),
-            headers={
-                'Cache-Control': f'public, max-age={Config.IMAGE_CACHE_MAX_AGE}',
-                'Expires': expires_str,
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET',
-                'Access-Control-Allow-Headers': 'Content-Type'
+        # 对于微信图片，使用第三方代理服务
+        if 'mmbiz.qpic.cn' in image_url or 'mmecoa.qpic.cn' in image_url:
+            # 使用第三方图片代理服务
+            proxy_url = f"https://images.weserv.nl/?url={quote(image_url, safe='')}"
+            logger.info(f"使用第三方代理: {proxy_url}")
+            
+            # 设置请求头
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+                'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
             }
-        )
+            
+            # 获取图片
+            response = requests.get(proxy_url, headers=headers, timeout=Config.TIMEOUT, stream=True)
+            response.raise_for_status()
+            
+            # 计算缓存过期时间
+            expires_date = datetime.utcnow() + timedelta(days=Config.IMAGE_CACHE_DAYS)
+            expires_str = expires_date.strftime('%a, %d %b %Y %H:%M:%S GMT')
+            
+            # 返回图片，设置缓存
+            return Response(
+                response.content,
+                mimetype=response.headers.get('content-type', 'image/jpeg'),
+                headers={
+                    'Cache-Control': f'public, max-age={Config.IMAGE_CACHE_MAX_AGE}',
+                    'Expires': expires_str,
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Allow-Headers': 'Content-Type'
+                }
+            )
+        
+        # 对于其他图片，使用原有逻辑
+        else:
+            # 设置请求头，模拟浏览器访问
+            headers = {
+                'User-Agent': Config.USER_AGENT,
+                'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+            }
+            
+            # 根据图片来源设置合适的Referer
+            if 'csdn.net' in image_url:
+                headers['Referer'] = 'https://blog.csdn.net/'
+            elif 'weixin.qq.com' in image_url:
+                headers['Referer'] = 'https://mp.weixin.qq.com/'
+            else:
+                headers['Referer'] = 'https://www.google.com/'
+            
+            # 获取图片
+            response = requests.get(image_url, headers=headers, timeout=Config.TIMEOUT, stream=True)
+            response.raise_for_status()
+            
+            # 计算缓存过期时间
+            expires_date = datetime.utcnow() + timedelta(days=Config.IMAGE_CACHE_DAYS)
+            expires_str = expires_date.strftime('%a, %d %b %Y %H:%M:%S GMT')
+            
+            # 返回图片，设置缓存
+            return Response(
+                response.content,
+                mimetype=response.headers.get('content-type', 'image/jpeg'),
+                headers={
+                    'Cache-Control': f'public, max-age={Config.IMAGE_CACHE_MAX_AGE}',
+                    'Expires': expires_str,
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET',
+                    'Access-Control-Allow-Headers': 'Content-Type'
+                }
+            )
         
     except requests.exceptions.Timeout:
         logger.error(f"图片请求超时: {image_url}")
