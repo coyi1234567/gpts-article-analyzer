@@ -186,24 +186,37 @@ def proxy_image(encoded_url):
         
         logger.info(f"代理图片请求: {image_url}")
         
-        # 对于微信图片，使用第三方代理服务
+        # 对于微信图片，使用多种代理服务
         if 'mmbiz.qpic.cn' in image_url or 'mmecoa.qpic.cn' in image_url:
-            # 使用第三方图片代理服务
-            proxy_url = f"https://images.weserv.nl/?url={quote(image_url, safe='')}"
-            logger.info(f"使用第三方代理: {proxy_url}")
+            # 尝试多种代理服务
+            proxy_services = [
+                f"https://images.weserv.nl/?url={quote(image_url, safe='')}",
+                f"https://pic1.xuehuaimg.com/proxy/{quote(image_url, safe='')}",
+                f"https://img.nga.178.com/attachments/mon_202409/29/{quote(image_url, safe='')}"
+            ]
             
-            # 设置请求头
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-                'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
-                'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'Connection': 'keep-alive',
-            }
+            response = None
+            for proxy_url in proxy_services:
+                try:
+                    logger.info(f"尝试代理服务: {proxy_url}")
+                    headers = {
+                        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+                        'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+                        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                        'Accept-Encoding': 'gzip, deflate, br',
+                        'Connection': 'keep-alive',
+                    }
+                    
+                    response = requests.get(proxy_url, headers=headers, timeout=Config.TIMEOUT, stream=True)
+                    response.raise_for_status()
+                    logger.info(f"代理服务成功: {proxy_url}")
+                    break
+                except Exception as e:
+                    logger.warning(f"代理服务失败: {proxy_url}, 错误: {str(e)}")
+                    continue
             
-            # 获取图片
-            response = requests.get(proxy_url, headers=headers, timeout=Config.TIMEOUT, stream=True)
-            response.raise_for_status()
+            if response is None:
+                raise Exception("所有代理服务都失败了")
             
             # 计算缓存过期时间
             expires_date = datetime.utcnow() + timedelta(days=Config.IMAGE_CACHE_DAYS)
